@@ -1,0 +1,44 @@
+pipeline:
+  agent:
+    label: 'docker'   # Specifies to use a node with Docker installed
+
+  stages:
+    - stage: "Checkout Code"
+      steps:
+        - script:
+            command: "git checkout ${BRANCH_NAME}"  # Checks out the branch specified by BRANCH_NAME
+
+    - stage: "Install Dependencies"
+      steps:
+        - script:
+            command: "npm install"  # Installs Node.js dependencies listed in package.json
+
+    - stage: "Lint Code"
+      steps:
+        - script:
+            command: "npm run lint"  # Runs ESLint to check the code for any issues
+
+    - stage: "Run Tests"
+      steps:
+        - script:
+            command: "npm test"  # Executes tests defined in your Node.js project
+
+    - stage: "Build Docker Image"
+      steps:
+        - script:
+            command: |
+              docker build -t myapp:${BUILD_NUMBER} .  # Builds a Docker image and tags it with the build number
+              docker tag myapp:${BUILD_NUMBER} mydockerhub/myapp:${BUILD_NUMBER}  # Tags the image for Docker Hub
+
+    - stage: "Push Docker Image"
+      steps:
+        - script:
+            command: |
+              docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD  # Logs in to Docker Hub using credentials
+              docker push mydockerhub/myapp:${BUILD_NUMBER}  # Pushes the tagged Docker image to Docker Hub
+
+   # - stage: "Deploy to Kubernetes"
+   #   steps:
+   #     - script:
+   #         command: |
+   #           kubectl set image deployment/myapp-deployment myapp=mydockerhub/myapp:${BUILD_NUMBER} --record  # Deploys the new Docker image to Kubernetes
